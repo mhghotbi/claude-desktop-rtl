@@ -153,11 +153,24 @@ do_install() {
     ok "Repacked app.asar."
 
     # Disable Electron ASAR integrity fuse (hash no longer matches).
-    log "Disabling ASAR integrity fuse..."
-    npx --yes "$FUSES_PKG" write \
+    log "Disabling ASAR integrity fuse (EnableEmbeddedAsarIntegrityValidation=off)..."
+    local fuse_out fuse_rc=0
+    fuse_out="$(npx --yes "$FUSES_PKG" write \
         --app "$TARGET_APP" \
-        EnableEmbeddedAsarIntegrityValidation:disable \
-    || warn "fuses write failed — app may refuse to launch. Try: codesign --remove-signature \"$TARGET_APP\""
+        EnableEmbeddedAsarIntegrityValidation=off 2>&1)" || fuse_rc=$?
+    if [[ "$fuse_rc" -ne 0 ]]; then
+        warn "fuses write failed — app may refuse to launch."
+        while IFS= read -r line; do [[ -n "$line" ]] && log "    $line"; done <<< "$fuse_out"
+        warn "Try: codesign --remove-signature \"$TARGET_APP\" then re-run install."
+    else
+        local fuse_probe
+        fuse_probe="$(npx --yes "$FUSES_PKG" read --app "$TARGET_APP" 2>/dev/null || true)"
+        if grep -q 'EnableEmbeddedAsarIntegrityValidation.*Disabled' <<< "$fuse_probe"; then
+            ok "ASAR integrity fuse disabled."
+        else
+            warn "Fuse write succeeded but re-probe still shows enabled — app may refuse to launch."
+        fi
+    fi
 
     # Remove quarantine attribute so macOS doesn't block the modified bundle.
     xattr -cr "$TARGET_APP" 2>/dev/null || true
@@ -169,8 +182,12 @@ do_install() {
     ok "Signed."
 
     echo ""
-    ok "Done! Open Claude RTL from: $TARGET_APP"
-    echo "   You can drag it to your Dock or Launchpad."
+    ok "Done! Claude RTL is at: $TARGET_APP"
+    echo "   (User Applications — not /Applications. Launchpad may not list it until you open it once.)"
+    echo ""
+    echo "   Open now:  open \"$TARGET_APP\""
+    echo "   Or Finder: Go → Home → Applications → Claude-RTL"
+    echo "   Drag Claude-RTL.app to the Dock to keep it handy."
     echo "   To uninstall: $0 restore"
 }
 
