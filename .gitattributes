@@ -1,0 +1,20 @@
+# Files involved in RSA signature verification MUST stay byte-identical between
+# the working copy, the repository, and what raw.githubusercontent.com serves.
+# Any CRLF<->LF conversion would invalidate patch.ps1.sig. We pin them to LF so
+# verification is portable across Windows checkouts (autocrlf=true) and CI.
+patch.ps1       text eol=lf
+patch.ps1.sig   text eol=lf
+install.ps1     text eol=lf
+
+# Tooling scripts: same treatment for consistency and so they work identically
+# whether checked out on Windows or Linux.
+tools/*.ps1     text eol=lf
+
+# The pre-commit hook itself is bash -- LF is mandatory anyway.
+.git/hooks/*    text eol=lf
+
+# macOS shell patcher -- must be LF or bash fails on Mac
+patch-mac.sh    text eol=lf
+
+# Binary font file -- no line-ending conversion
+*.woff2         binary

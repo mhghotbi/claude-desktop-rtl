@@ -1,0 +1,11 @@
+{
+  "name": "claude-desktop-rtl-patch",
+  "version": "1.0.0",
+  "description": "RTL (Persian/Arabic) + Vazirmatn font + math/table support patch for Claude Desktop on Windows & macOS. JS detection core, unit-tested.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "build": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-payload.ps1"
+  }
+}
